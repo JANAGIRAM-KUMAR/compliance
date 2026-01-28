@@ -82,26 +82,35 @@ button {
 <label>Date & Time of Incident</label>
 <input type="datetime-local" name="incident_date" required>
 
-<label>Attach Investigation File (PDF / Image / DOC)</label>
-<input type="file" name="attachment" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
-
-<label>Unit</label>
+<label>Unit where incident occured:</label>
 <input name="unit">
 
-<label>Section</label>
+<label>Section of the Unit where incident occured:</label>
 <input name="section">
 
-<label>Incident Description</label>
+<label>Brief description of incident:</label>
 <textarea name="description"></textarea>
 
-<label>People Involved</label>
+<label>People Involved:</label>
 <textarea name="people_involved"></textarea>
+
+<label>Area Operator:</label>
+<input name="area_operator" value="<?= $data['area_operator'] ?? '' ?>">
+
+<label>Shift Incharge:</label>
+<input name="shift_incharge" value="<?= $data['shift_incharge'] ?? '' ?>">
+
+<label>Maintenance Technician / Engineer:</label>
+<input name="maintenance_technician" value="<?= $data['maintenance_technician'] ?? '' ?>">
 
 <label>Condition of Injured & Action Taken</label>
 <textarea name="injured_condition"></textarea>
 
-<label>Root Cause</label>
+<label>Root Cause of Incident</label>
 <textarea name="root_cause"></textarea>
+
+<label>Attach Multiple Investigation Files (PDF / Image / DOC)</label>
+<input type="file" name="attachments[]" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
 
 <label>Recommendations & Action Plan</label>
 <textarea name="recommendations"></textarea>
