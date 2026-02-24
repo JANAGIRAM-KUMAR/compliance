@@ -116,13 +116,20 @@ $count = mysqli_num_rows($result);
         <div class="header">
             <div class="header-left">
                 <a href="dashboard.php" title="Back to Dashboard">
-                <img src="images/tpl.png" alt="TPL Logo" class="tpl-logo">
+                    <img src="images/tpl.png" alt="TPL Logo" class="tpl-logo">
                 </a>
                 <h2>Incident Investigation Reports</h2>
             </div>
 
             <?php if ($role === 'admin'): ?>
-                <a href="incident_form.php" class="add-btn">+ New Report</a>
+                <div style="display:flex; gap:10px;">
+                    <a href="incident_summary.php" class="add-btn">
+                        📄 Reports
+                    </a>
+                    <a href="incident_form.php" class="add-btn">
+                        + New Report
+                    </a>
+                </div>
             <?php endif; ?>
         </div>
 

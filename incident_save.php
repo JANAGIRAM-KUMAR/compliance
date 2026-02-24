@@ -28,7 +28,7 @@ if (!empty($_FILES['attachment']['name'])) {
 
 $sql = "INSERT INTO incident_reports
 (iir_no, incident_date, unit, section, description, people_involved,
- injured_condition, root_cause, recommendations, attachment, created_by)
+ injured_condition, root_cause, created_by)
 VALUES (
 '{$_POST['iir_no']}',
 '{$_POST['incident_date']}',
@@ -38,12 +38,49 @@ VALUES (
 '{$_POST['people_involved']}',
 '{$_POST['injured_condition']}',
 '{$_POST['root_cause']}',
-'{$_POST['recommendations']}',
-'$attachmentPath',
 '{$_SESSION['user']}'
 )";
 
 mysqli_query($conn, $sql);
+
+$incident_id = mysqli_insert_id($conn);
+
+// Save attachment in separate table
+if ($attachmentPath !== null) {
+
+    $insertAttachment = "INSERT INTO incident_attachments
+    (incident_id, file_path)
+    VALUES
+    ('$incident_id', '$attachmentPath')";
+
+    mysqli_query($conn, $insertAttachment);
+}
+
+if (!empty($_POST['recommendation'])) {
+
+    foreach ($_POST['recommendation'] as $key => $value) {
+
+        $rec = $_POST['recommendation'][$key];
+        $resp = $_POST['resp'][$key];
+        $date = $_POST['target_date'][$key];
+        $remarks = $_POST['remarks'][$key];
+
+        $status = "pending"; // default
+
+        $insertRec = "INSERT INTO incident_recommendations
+        (incident_id, recommendation, resp, target_date, remarks, status)
+        VALUES (
+        '$incident_id',
+        '$rec',
+        '$resp',
+        '$date',
+        '$remarks',
+        '$status'
+        )";
+
+        mysqli_query($conn, $insertRec);
+    }
+}
 
 header("Location: incident_investigation.php");
 exit;
