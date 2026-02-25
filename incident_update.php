@@ -39,38 +39,43 @@ try {
         section='" . mysqli_real_escape_string($conn, $_POST['section']) . "',
         description='" . mysqli_real_escape_string($conn, $_POST['description']) . "',
         people_involved='" . mysqli_real_escape_string($conn, $_POST['people_involved']) . "',
+        area_operator='" . mysqli_real_escape_string($conn, $_POST['area_operator']) . "',
+        shift_incharge='" . mysqli_real_escape_string($conn, $_POST['shift_incharge']) . "',
+        maintenance_technician='" . mysqli_real_escape_string($conn, $_POST['maintenance_technician']) . "',
         injured_condition='" . mysqli_real_escape_string($conn, $_POST['injured_condition']) . "',
         root_cause='" . mysqli_real_escape_string($conn, $_POST['root_cause']) . "'
         WHERE id=$id";
 
     mysqli_query($conn, $sql);
 
-    /* ===============================
-       HANDLE ATTACHMENT (Separate Table)
-    ================================= */
-    if (!empty($_FILES['attachment']['name'])) {
+/* ===============================
+   HANDLE MULTIPLE ATTACHMENTS
+================================= */
 
-        $allowed = ['pdf','jpg','jpeg','png','doc','docx'];
-        $ext = strtolower(pathinfo($_FILES['attachment']['name'], PATHINFO_EXTENSION));
+$allowed = ['pdf','jpg','jpeg','png','doc','docx'];
+$uploadDir = "uploads/incident_reports/";
+
+if (!empty($_FILES['attachments']['name'][0])) {
+
+    foreach ($_FILES['attachments']['name'] as $key => $fileName) {
+
+        $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
 
         if (!in_array($ext, $allowed)) {
-            throw new Exception("Invalid file type");
+            continue; // skip invalid file
         }
 
-        $uploadDir = "uploads/incident_reports/";
-        $fileName = time() . "_" . basename($_FILES['attachment']['name']);
-        $targetPath = $uploadDir . $fileName;
+        $newName = time() . "_" . $key . "_" . basename($fileName);
+        $targetPath = $uploadDir . $newName;
 
-        if (move_uploaded_file($_FILES['attachment']['tmp_name'], $targetPath)) {
+        if (move_uploaded_file($_FILES['attachments']['tmp_name'][$key], $targetPath)) {
 
-            // delete old attachments
-            mysqli_query($conn, "DELETE FROM attachments WHERE incident_id=$id");
-
-            // insert new one
-            mysqli_query($conn, "INSERT INTO attachments (incident_id, file_path)
-                                 VALUES ($id, '$targetPath')");
+            mysqli_query($conn, "INSERT INTO incident_attachments
+                (incident_id, file_path)
+                VALUES ($id, '$targetPath')");
         }
     }
+}
 
     /* ===============================
        HANDLE RECOMMENDATIONS

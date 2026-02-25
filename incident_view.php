@@ -243,7 +243,53 @@ if ($role !== 'admin' && $data['status'] === 'approved') {
             background: #157a3f;
             transform: scale(1.05);
         }
-        
+
+.card-header {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.header-left {
+    justify-self: start;
+}
+
+.header-right {
+    justify-self: end;
+}
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: #f3f4f6;
+    color: #1b8f4c;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    border: 1px solid #d1d5db;
+    transition: all 0.25s ease;
+}
+
+.back-btn .arrow {
+    font-size: 16px;
+    transition: transform 0.25s ease;
+}
+
+.back-btn:hover {
+    background: #1b8f4c;
+    color: white;
+    border-color: #1b8f4c;
+    box-shadow: 0 4px 12px rgba(27, 143, 76, 0.25);
+}
+
+.back-btn:hover .arrow {
+    transform: translateX(-4px);
+}
     </style>
 </head>
 
@@ -253,23 +299,38 @@ if ($role !== 'admin' && $data['status'] === 'approved') {
 
         <!-- CARD HEADER -->
         <div class="card-header">
-            <h2>IIR NO: <?= $data['iir_no'] ?></h2>
-            <a href="dashboard.php" title="Back to Dashboard">
-                <img src="images/tpl.png" alt="TPL Logo" class="tpl-logo">
-            </a>
+
+            <div class="header-left">
+                <a href="dashboard.php" class="back-btn">
+                    <span class="arrow">←</span>
+                    Back
+                </a>
+            </div>
+
+            <h2>IIR NO:
+                <?= $data['iir_no'] ?>
+            </h2>
+
+            <div class="header-right">
+                <a href="dashboard.php">
+                    <img src="images/tpl.png" alt="TPL Logo" class="tpl-logo">
+                </a>
+            </div>
+
         </div>
 
         <p><b>Date & Time:</b> <?= $data['incident_date'] ?></p>
         <p><b>Unit:</b> <?= $data['unit'] ?></p>
         <p><b>Section:</b> <?= $data['section'] ?></p>
 
-        <p><b>Description:</b><br><?= nl2br($data['description']) ?></p>
-        <p><b>People Involved:</b><br><?= nl2br($data['people_involved']) ?></p>
-        <p><b>Area Operator:</b><br></p>
-        <p><b>Shift Incharge:</b><br></p>
-        <p><b>Maintenance Technician / Engineer:</b><br></p>
-        <p><b>Brief Description of the Condition of Injured & Action Taken:</b><br><?= nl2br($data['injured_condition']) ?></p>
-        <p><b>Root Cause of the Incident:</b><br><?= nl2br($data['root_cause']) ?></p>
+        <p><b>Description:</b><br><?= $data['description'] ?></p>
+        <p><b>People Involved:</b><br><?= $data['people_involved'] ?></p>
+        <p><b>Area Operator:</b><br><?= $data['area_operator'] ?></p>
+        <p><b>Shift Incharge:</b><br><?= $data['shift_incharge']?></p>
+        <p><b>Maintenance Technician / Engineer:</b><br><?= $data['maintenance_technician'] ?></p>
+        <p><b>Brief Description of the Condition of Injured & Action
+                Taken:</b><br><?= $data['injured_condition'] ?></p>
+        <p><b>Root Cause of the Incident:</b><br><?= $data['root_cause'] ?></p>
 
         <?php
         $files = mysqli_query($conn, "SELECT * FROM incident_attachments WHERE incident_id=$id");
