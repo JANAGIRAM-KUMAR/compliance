@@ -6,28 +6,36 @@ if ($_SESSION['role'] !== 'admin') {
     die("Unauthorized");
 }
 
-$attachmentPath = null;
+$allowed = ['pdf','jpg','jpeg','png','doc','docx'];
+$uploadDir = "uploads/incident_reports/";
 
-if (!empty($_FILES['attachment']['name'])) {
+if (!empty($_FILES['attachments']['name'][0])) {
 
-    $allowed = ['pdf','jpg','jpeg','png','doc','docx'];
-    $ext = strtolower(pathinfo($_FILES['attachment']['name'], PATHINFO_EXTENSION));
+    foreach ($_FILES['attachments']['name'] as $key => $fileName) {
 
-    if (!in_array($ext, $allowed)) {
-        die("Invalid file type");
-    }
+        $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
 
-    $uploadDir = "uploads/incident_reports/";
-    $fileName = time() . "_" . basename($_FILES['attachment']['name']);
-    $targetPath = $uploadDir . $fileName;
+        if (!in_array($ext, $allowed)) {
+            continue; // skip invalid files instead of stopping everything
+        }
 
-    if (move_uploaded_file($_FILES['attachment']['tmp_name'], $targetPath)) {
-        $attachmentPath = $targetPath;
+        $newName = time() . "_" . $key . "_" . basename($fileName);
+        $targetPath = $uploadDir . $newName;
+
+        if (move_uploaded_file($_FILES['attachments']['tmp_name'][$key], $targetPath)) {
+
+            $insertAttachment = "INSERT INTO incident_attachments
+            (incident_id, file_path)
+            VALUES
+            ('$incident_id', '$targetPath')";
+
+            mysqli_query($conn, $insertAttachment);
+        }
     }
 }
 
 $sql = "INSERT INTO incident_reports
-(iir_no, incident_date, unit, section, description, people_involved,
+(iir_no, incident_date, unit, section, description, people_involved, area_operator, shift_incharge, maintenance_technician,
  injured_condition, root_cause, created_by)
 VALUES (
 '{$_POST['iir_no']}',
@@ -36,6 +44,9 @@ VALUES (
 '{$_POST['section']}',
 '{$_POST['description']}',
 '{$_POST['people_involved']}',
+'{$_POST['area_operator']}',
+'{$_POST['shift_incharge']}',
+'{$_POST['maintenance_technician']}',
 '{$_POST['injured_condition']}',
 '{$_POST['root_cause']}',
 '{$_SESSION['user']}'
@@ -45,16 +56,6 @@ mysqli_query($conn, $sql);
 
 $incident_id = mysqli_insert_id($conn);
 
-// Save attachment in separate table
-if ($attachmentPath !== null) {
-
-    $insertAttachment = "INSERT INTO incident_attachments
-    (incident_id, file_path)
-    VALUES
-    ('$incident_id', '$attachmentPath')";
-
-    mysqli_query($conn, $insertAttachment);
-}
 
 if (!empty($_POST['recommendation'])) {
 

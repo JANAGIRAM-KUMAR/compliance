@@ -3,6 +3,19 @@ session_start();
 if ($_SESSION['role'] !== 'admin') {
     die("Access denied");
 }
+include "db.php";
+
+// Get next ID
+$result = mysqli_query($conn, "SELECT AUTO_INCREMENT 
+FROM INFORMATION_SCHEMA.TABLES 
+WHERE TABLE_NAME = 'incident_reports'");
+
+$row = mysqli_fetch_assoc($result);
+$next_id = $row['AUTO_INCREMENT'] ?? 1;
+
+// Format: IIR/2026/001
+$year = date("Y");
+$formatted_iir = "IIR/" . $year . "/" . str_pad($next_id, 3, "0", STR_PAD_LEFT);
 ?>
 
 <!DOCTYPE html>
@@ -62,12 +75,53 @@ if ($_SESSION['role'] !== 'admin') {
             cursor: pointer;
         }
 
-        .form-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-        }
+         .form-header {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.header-left {
+    justify-self: start;
+}
+
+.header-right {
+    justify-self: end;
+}
+
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: #f3f4f6;
+    color: #1b8f4c;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    border: 1px solid #d1dbd2;
+    transition: all 0.25s ease;
+}
+
+.back-btn .arrow {
+    font-size: 16px;
+    transition: transform 0.25s ease;
+}
+
+.back-btn:hover {
+    background: #1b8f4c;
+    color: white;
+    border-color: #1b8f4c;
+    box-shadow: 0 4px 12px rgba(27, 143, 76, 0.25);
+}
+
+.back-btn:hover .arrow {
+    transform: translateX(-4px);
+}
 
         .tpl-logo {
             width: 42px;
@@ -261,19 +315,35 @@ if ($_SESSION['role'] !== 'admin') {
     <div class="form-box">
         <form method="POST" action="incident_save.php" enctype="multipart/form-data">
             <div class="form-header">
-                <h2>Incident Investigation Report</h2>
-                <a href="incident_investigation.php" title="Back to Dashboard">
-                    <img src="images/tpl.png" alt="TPL Logo" class="tpl-logo">
-                </a>
-            </div>
+
+    <div class="header-left">
+        <a href="incident_investigation.php" class="back-btn">
+        <span class="arrow">←</span>
+        Back
+    </a>
+    </div>
+
+    <h2>Incident Investigation Report</h2>
+
+    <div class="header-right">
+        <a href="incident_investigation.php">
+            <img src="images/tpl.png" alt="TPL Logo" class="tpl-logo">
+        </a>
+    </div>
+
+</div>
+
             <label>IIR Number</label>
-            <input name="iir_no" required>
+            <input value="<?php echo $formatted_iir; ?>" readonly style="background:#f3f4f6; font-weight:600;">
+            <input type="hidden" name="iir_no" value="<?php echo $formatted_iir; ?>">
 
             <label>Date & Time of Incident</label>
             <input type="datetime-local" name="incident_date" required>
 
             <label>Attach Investigation File (PDF / Image / DOC)</label>
-            <input type="file" name="attachment" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+            <input type="file" name="attachments[]" 
+       accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" 
+       multiple>
 
             <label>Unit where Incident occurred</label>
             <input name="unit">
@@ -345,13 +415,23 @@ if ($_SESSION['role'] !== 'admin') {
     const userRole = "<?php echo $_SESSION['role']; ?>";
 
     function addRow() {
-        rows.push({});
+        rows.push({
+            recommendation: "",
+            resp: "",
+            target_date: "",
+            remarks: "",
+            status: "Pending"
+        });
         renderTable();
     }
 
     function deleteRow(index) {
         rows.splice(index, 1);
         renderTable();
+    }
+
+    function updateField(index, field, value) {
+        rows[index][field] = value;
     }
 
     function renderTable() {
@@ -365,50 +445,61 @@ if ($_SESSION['role'] !== 'admin') {
         const end = start + rowsPerPage;
         const pageRows = rows.slice(start, end);
 
-        pageRows.forEach((_, i) => {
+        pageRows.forEach((row, i) => {
             const realIndex = start + i;
 
             tbody.innerHTML += `
-            <tr style="animation:fadeIn .2s ease;">
-                <td>${realIndex + 1}</td>
+        <tr>
+            <td>${realIndex + 1}</td>
 
-                <td><textarea name="recommendation[]"></textarea></td>
+            <td>
+                <textarea name="recommendation[]" 
+                oninput="updateField(${realIndex}, 'recommendation', this.value)">
+                ${row.recommendation || ""}
+                </textarea>
+            </td>
 
-                <td><input type="text" name="resp[]"></td>
+            <td>
+                <input type="text" name="resp[]" 
+                value="${row.resp || ""}"
+                oninput="updateField(${realIndex}, 'resp', this.value)">
+            </td>
 
-                <td><input type="date" name="target_date[]"></td>
+            <td>
+                <input type="date" name="target_date[]" 
+                value="${row.target_date || ""}"
+                onchange="updateField(${realIndex}, 'target_date', this.value)">
+            </td>
 
-                <td><textarea name="remarks[]"></textarea></td>
+            <td>
+                <textarea name="remarks[]" 
+                oninput="updateField(${realIndex}, 'remarks', this.value)">
+                ${row.remarks || ""}
+                </textarea>
+            </td>
 
-                <td>
-                    ${userRole === "admin"
-                    ? `<select name="status[]" onchange="updateStatusStyle(this)">
-                                <option value="Pending" selected>Pending</option>
-                                <option value="Approved">Approved</option>
-                           </select>`
-                    : `<input type="text" name="status[]" value="Pending" readonly class="status-pending">`
+            <td>
+                ${userRole === "admin"
+                    ? `<select name="status[]" 
+                        onchange="updateField(${realIndex}, 'status', this.value)">
+                        <option value="Pending" ${row.status === "Pending" ? "selected" : ""}>Pending</option>
+                        <option value="Approved" ${row.status === "Approved" ? "selected" : ""}>Approved</option>
+                       </select>`
+                    : `<input type="text" name="status[]" 
+                        value="${row.status}" readonly>`
                 }
-                </td>
+            </td>
 
-                <td>
-                    <button type="button" class="delete-btn" onclick="deleteRow(${realIndex})">✖</button>
-                </td>
-            </tr>
+            <td>
+                <button type="button" class="delete-btn" 
+                onclick="deleteRow(${realIndex})">✖</button>
+            </td>
+        </tr>
         `;
         });
 
         document.getElementById("pageInfo").innerText =
             "Page " + currentPage + " of " + totalPages;
-    }
-
-    function updateStatusStyle(select) {
-        if (select.value === "Approved") {
-            select.classList.add("status-approved");
-            select.classList.remove("status-pending");
-        } else {
-            select.classList.add("status-pending");
-            select.classList.remove("status-approved");
-        }
     }
 
     function nextPage() {
